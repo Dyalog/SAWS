@@ -18,7 +18,7 @@
  ⎕←SAWS.Version←'Version built at ',,'ZI4,<->,ZI2,<->,ZI2,< >,ZI2,<:>,ZI2,<:>,ZI2'⎕FMT 1 6⍴⎕TS
 
  ⎕LX←''
- ⎕←'      )WSID "',⎕WSID←path,'Distribution\SAWS.dws"'
  ⎕←'⍝ Now:'
+ ⎕←'      )WSID "',⎕WSID←path,'Distribution\SAWS.dws"'
  ⎕←'      )erase Build Clear Dev Load'
  ⎕←'      )SAVE'
