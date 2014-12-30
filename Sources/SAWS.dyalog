@@ -37,7 +37,7 @@
 
   (⎕IO ⎕ML ⎕WX)←1 3 3
 
-  ∇ r←larg Call rarg;service;method;arg;ok;cmd;port;req;hdr;z;page;protocol;host;lchost;req2send;mask;tmp;ss;http;body;resp;soapaction;xmlns;cert;secure;ssl;length;t;m;certdir
+  ∇ r←larg Call rarg;service;method;arg;ok;cmd;port;req;hdr;z;page;protocol;host;lchost;req2send;mask;tmp;ss;http;body;resp;soapaction;xmlns;cert;secure;ssl;length;t;m;certdir;chunked;chunk;buffer;chunklength;done;data;datalen;header;wr;getchunklen;h2d;len
                ⍝ Invoke a Web Service
    
                ⍝ larg[1] - host name
@@ -69,6 +69,9 @@
     :If 0≠1⊃z←DRC.Init'' ⋄ r←2 z ⍝ flag Conga error
       :GoTo exit
     :EndIf
+   
+    h2d←{⎕IO←0 ⋄ 16⊥'0123456789abcdef'⍳U.lc ⍵} ⍝ hex to decimal
+    getchunklen←{¯1=len←¯1+⊃(NL⍷⍵)/⍳⍴⍵:¯1 ¯1 ⋄ chunklen←h2d len↑⍵ ⋄ (⍴⍵)<len+chunklen+4:¯1 ¯1 ⋄ len chunklen}
    
     :If 1=≡larg ⋄ larg←,⊂larg ⋄ :EndIf ⍝ if only host name supplied nest it
     larg←7↑larg,(⍴,larg)↓''⍬'' '' '' 32 ''
@@ -148,30 +151,75 @@
    
     resp←'' ⍝ initialize the response
     length←0
-   
+    chunked chunk buffer chunklength←0 '' '' 0
+    done data datalen header←0 ⍬ 0(0 ⍬)
     :Repeat
-      :If 0≠1⊃z←DRC.Wait cmd 5000              ⍝ Loop, collecting pieces of response
-        r←2 z ⍝ flag Conga error
-        {}DRC.Close cmd
-        :GoTo exit
-      :ElseIf z[3]∊'Block' 'BlockLast'
-        resp←resp,4⊃z
-        :Trap 0
-          :If length=0
-          :AndIf ∨/m←(NL,NL)⍷resp
-          :AndIf ~0∊⍴t←(2⊃HTTPUtils.DecodeHeader resp)HTTPUtils.GetValue'content-length' 'Numeric'
-            length←t+3+m⍳1
+      :If ~done←0≠1⊃wr←DRC.Wait cmd 5000            ⍝ Wait up to 5 secs
+        :If wr[3]∊'Block' 'BlockLast'             ⍝ If we got some data
+          :If chunked
+            chunk←4⊃wr
+          :ElseIf 0<⍴data,←4⊃wr
+          :AndIf 0=1⊃header
+            header←HTTPUtils.DecodeHeader data
+            :If 0<1⊃header
+              data←(1⊃header)↓data
+              :If chunked←∨/'chunked'⍷(2⊃header)HTTPUtils.GetValue'Transfer-Encoding' ''
+                chunk←data
+                data←''
+              :Else
+                datalen←1⊃((2⊃header)HTTPUtils.GetValue'Content-Length' 'Numeric'),¯1 ⍝ ¯1 if no content length not specified
+              :EndIf
+            :EndIf
           :EndIf
-        :EndTrap
+        :Else
+          r←2 wr ⍝ Error?
+          {}DRC.Close cmd
+          :GoTo exit
+        :EndIf
+        :If chunked
+          buffer,←chunk
+          :While done<¯1≠1⊃(len chunklength)←getchunklen buffer
+            :If (⍴buffer)≥4+len+chunklength
+              data,←chunklength↑(len+2)↓buffer
+              buffer←(chunklength+len+4)↓buffer
+              :If done←0=chunklength ⍝ chunked transfer can add headers at the end of the transmission
+                header[2]←⊂(2⊃header)⍪2⊃HTTPUtils.DecodeHeader buffer
+              :EndIf
+            :EndIf
+          :EndWhile
+        :Else
+          done←done∨'BlockLast'≡3⊃wr                        ⍝ Done if socket was closed
+          :If datalen>0
+            done←done∨datalen≤⍴data ⍝ ... or if declared amount of data rcvd
+          :Else
+            done←done∨':Envelope>'{⍺≡(-⍴⍺)↑⍵}data
+          :EndIf
+        :EndIf
       :EndIf
-    :Until ('BlockLast'≡3⊃z)∨(length≤⍴resp)∨':Envelope>'{⍺≡(-⍴⍺)↑⍵}resp   ⍝ Until error or all data received
+    :Until done
+    resp←data
+⍝    :Repeat
+⍝      :If 0≠1⊃z←DRC.Wait cmd 5000              ⍝ Loop, collecting pieces of response
+⍝        r←2 z ⍝ flag Conga error
+⍝        {}DRC.Close cmd
+⍝        :GoTo exit
+⍝      :ElseIf z[3]∊'Block' 'BlockLast'
+⍝        resp←resp,4⊃z
+⍝        :Trap 0
+⍝          :If length=0
+⍝          :AndIf ∨/m←(NL,NL)⍷resp
+⍝          :AndIf ~0∊⍴t←(2⊃HTTPUtils.DecodeHeader resp)HTTPUtils.GetValue'content-length' 'Numeric'
+⍝            length←t+3+m⍳1
+⍝          :EndIf
+⍝        :EndTrap
+⍝      :EndIf
+⍝    :Until ('BlockLast'≡3⊃z)∨(length≤⍴resp)∨':Envelope>'{⍺≡(-⍴⍺)↑⍵}resp   ⍝ Until error or all data received
    
     {}DRC.Close cmd
-   
     :If DEBUG bit 1 ⋄ LastCallResponse←resp ⋄ :EndIf
     r←¯1 'Empty response from host'
     :If ~0∊⍴resp
-      http←HTTPUtils.ParseHTTPResponse resp ⍝ build http struct and split off body
+      http←HTTPUtils.ParseHTTPResponse(resp(2⊃header)) ⍝ build http struct and split off body
       :If 200≠http.StatusCode
         r←3((http.(StatusCode Reason)),⊂resp) ⍝ flag HTTP error
         :GoTo exit
