@@ -71,7 +71,7 @@
     :EndIf
    
     h2d←{⎕IO←0 ⋄ 16⊥'0123456789abcdef'⍳U.lc ⍵} ⍝ hex to decimal
-    getchunklen←{¯1=len←¯1+⊃(NL⍷⍵)/⍳⍴⍵:¯1 ¯1 ⋄ chunklen←h2d len↑⍵ ⋄ (⍴⍵)<len+chunklen+4:¯1 ¯1 ⋄ len chunklen}
+    getchunklen←{¯1=len←¯1+1⊃(NL⍷⍵)/⍳⍴⍵:¯1 ¯1 ⋄ chunklen←h2d len↑⍵ ⋄ (⍴⍵)<len+chunklen+4:¯1 ¯1 ⋄ len chunklen}
    
     :If 1=≡larg ⋄ larg←,⊂larg ⋄ :EndIf ⍝ if only host name supplied nest it
     larg←7↑larg,(⍴,larg)↓''⍬'' '' '' 32 ''
