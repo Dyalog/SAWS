@@ -11,8 +11,9 @@
  ⎕←⎕SE.SALT.Load'⍵\Sources\WebServer -target=#.SAWS -source=no -nolink'
  ⎕←⎕SE.SALT.Load'⍵\Sources\Files -target=# -source=no -nolink'
  ⎕←⎕SE.SALT.Load'⍵\Sources\BuildCertDir -target=# -source=no -nolink'
- ⎕←⎕SE.SALT.Load'⍵\Sources\Samples -target=#.SAWS -source=no -nolink'
- ⎕←⎕SE.SALT.Load'⍵\Sources\Samples\MyWebService -target=# -source=no -nolink'
+ ⎕←⎕SE.SALT.Load'⍵\Sources\WebServices -target=# -source=no -nolink'
+ ⎕←'WebServiceSamples' ⎕NS ''
+ ⎕←⎕SE.SALT.Load'⍵\Sources\WebServiceSamples\* -target=#.WebServiceSamples -source=no -nolink'
 
  ⎕←'SAWS.Version set to:'
  ⎕←SAWS.Version←'Version built at ',,'ZI4,<->,ZI2,<->,ZI2,< >,ZI2,<:>,ZI2,<:>,ZI2'⎕FMT 1 6⍴⎕TS

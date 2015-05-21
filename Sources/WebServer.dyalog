@@ -94,7 +94,7 @@ stop←1
                     ⍝  [2] - (charvec) Additional HTTP headers.  If none, just set to ''.
                     ⍝  [3] - (charvec) HTTP content.             If none, just set to ''.
      
- :Trap 0 ⍝ be sure to cover any problems during ⍎ and cover a possibly-bogus result from it
+ :Trap 0/0 ⍝ be sure to cover any problems during ⍎ and cover a possibly-bogus result from it
    (status hdr content)←⍎HOME,' (cmd←##.HTTPUtils.DecodeCmd req) conns'
  :Else
    ##.SAWS_Error←⎕TS ⎕LC ⎕XSI ⎕DM
@@ -185,8 +185,9 @@ stop←1
  ##.Output'Web server ''',name,''' stopped '
 ∇
 
-∇ r←MakeHTTPRequest req;x;v;s;p;l;m;n;i;c
+∇ r←MakeHTTPRequest req;x;v;s;p;l;m;n;i;c;q
      ⍝ kludge to get by ampersands in a POST - will be fixed when we build proper requests from MiServerCGI
+
  c←''
  :If (⍴req)≥i←1⍳⍨'>tsop<'⍷⌽req
    i←(⍴req)-i+5
@@ -201,10 +202,10 @@ stop←1
  :EndTrap
  v←'var'∘≡¨x[;2]
  v←↑{⎕ML←3 ⋄ (~<\'='=⍵)⊂⍵}¨v/x[;3]
- m l p s n←v∘{3::2⊃⍵ ⋄ ⍺[;2]⊃⍨⍺[;1]⍳⊂1⊃⍵}¨↓'REQUEST_METHOD' 'CONTENT_LENGTH' 'PATH_INFO' 'SERVER_PROTOCOL' 'SERVER_NAME',[1.1]'GET' '0' '' 'HTTP/1.0' 'localhost'
+ m l p s n q←v∘{3::2⊃⍵ ⋄ ⍺[;2]⊃⍨⍺[;1]⍳⊂1⊃⍵}¨↓'REQUEST_METHOD' 'CONTENT_LENGTH' 'PATH_INFO' 'SERVER_PROTOCOL' 'SERVER_NAME' 'QUERY_STRING',[1.1]'GET' '0' '' 'HTTP/1.0' 'localhost' ''
  l←⍕⍴c
      ⍝ p←p↓⍨¯5×'.saws'≡#.SAWS.HTTPUtils.lc ¯5↑p ⍝ drop off .saws
- r←(m,' ',p,' ',s,NL,'Host: ',n,NL,'Content-Length: ',l,NL,NL)c
+ r←(m,' ',p,((' '∨.≠q)/'?',q),' ',s,NL,'Host: ',n,NL,'Content-Length: ',l,NL,NL)c
 ∇
 
 ∇ r←Run arg;HOME;port;name;Common;stop;rc;objname;command;data;nspc;wres
