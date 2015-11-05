@@ -694,7 +694,7 @@
      
       :If close≠¯1
           Init
-          #.MyWebService Run port 1 ⍝ Start Server
+          #.WebServiceSamples.MyWebService Run port 1 ⍝ Start Server
           ⎕DL 1           ⍝ Give it time to wake up
       :EndIf
      
