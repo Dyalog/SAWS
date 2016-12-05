@@ -284,7 +284,7 @@
                     ⍝ Web Service handler build for embedding in the Conga sample Web Server
                     ⍝ Return HTTP return code, HTTP headers, HTTP body
                     ⍝ buffer is ignored, entire input expected to be in "cmd"
-      
+     
       buffer←session.Buffer
       :If ~0∊⍴Prefix
           cmd.Page←(lcprefix←HTTPUtils.lc Prefix){⍵↓⍨(⍴⍺)×⍺≡(⍴⍺)↑HTTPUtils.lc ⍵}cmd.Page
@@ -352,7 +352,7 @@
       R←status hdr res
     ∇
 
-    ∇ {r}←{a}Init w
+    ∇ r←{a}Init w
          ⍝ Initialize SAWS
          ⍝ w - dummy for consistency with Conga, SQAPL, etc
          ⍝ a - 1=hard initialization, 0=soft initialization
@@ -693,7 +693,7 @@
       :If 0=⎕NC'address' ⋄ address←'localhost' ⋄ :EndIf
      
       :If close≠¯1
-          Init
+          {}Init''
           #.WebServiceSamples.MyWebService Run port 1 ⍝ Start Server
           ⎕DL 1           ⍝ Give it time to wake up
       :EndIf
@@ -726,7 +726,7 @@
       port←8080
       :If 0=⎕NC'address' ⋄ address←'localhost' ⋄ :EndIf
       :If close≠¯1
-          Init''
+          {}Init''
           servercert←Samples.ReadCert'server/server'  ⍝ read the server certificate
           clientcert←Samples.ReadCert'client/client'  ⍝ read the client certificate
           #.MyWebService RunSecure port 1 '' '' '' ''servercert 96  ⍝ Start Server
